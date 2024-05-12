@@ -1,20 +1,33 @@
 import { ponder } from "@/generated";
 
-ponder.on("RamsesV2GaugeFactory:AdminChanged", async ({ event, context }) => {
-  console.log(event.args);
-});
+ponder.on("RamsesV2Gauge:ClaimRewards", async ({ event, context }) => {
+  const { User } = context.db
+  
+  // Update user's points on Arbitrum.
+  User.upsert({
+    id: event.args.receiver.toString(),
+    create: {
+      ramsesPoints: event.args.amount,
+      nilePoints: 0n
+    },
+    update: ({current}) => ({
+      ramsesPoints: current.ramsesPoints + event.args.amount,
+    })
+  })
+})
 
-ponder.on("RamsesV2GaugeFactory:BeaconUpgraded", async ({ event, context }) => {
-  console.log(event.args);
-});
+ponder.on("NileV2Gauge:ClaimRewards", async ({ event, context }) => {
+    const { User } = context.db
 
-ponder.on("RamsesV2GaugeFactory:Upgraded", async ({ event, context }) => {
-  console.log(event.args);
-});
-
-ponder.on(
-  "RamsesV2GaugeFactory:FeeCollectorChanged",
-  async ({ event, context }) => {
-    console.log(event.args);
-  },
-);
+    // Update user's points on Linea.
+    User.upsert({
+      id: event.args.receiver.toString(),
+      create: {
+        ramsesPoints: 0n,
+        nilePoints: event.args.amount
+      },
+      update: ({current}) => ({
+        nilePoints: current.nilePoints + event.args.amount,
+      })
+    })
+})
